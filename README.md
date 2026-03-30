@@ -41,4 +41,3 @@ facts-aws-compute metadata dump --path /latest/meta-data/placement/
 ## Output
 
 All output is JSON to stdout. All errors are JSON to stderr.
-# -facts-aws-compute
