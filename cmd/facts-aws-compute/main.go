@@ -113,8 +113,8 @@ func cmdDescribeInstances(ctx context.Context, args []string) {
 	profile := fs.String("profile", "", "AWS named profile")
 	fast := fs.Bool("fast", false, "Use IMDS for all fields, EC2 API fallback for tags only (default)")
 	full := fs.Bool("full", false, "Use EC2 API for all fields; --instance-id and --region required unless running on EC2")
-	imdsTimeout := fs.Int("imds-timeout", 0, "IMDS timeout override in seconds (env FAX_IMDS_TIMEOUT or default used if 0)")
-	ec2Timeout := fs.Int("ec2-timeout", 0, "EC2 timeout override in seconds (env FAX_EC2_TIMEOUT or default used if 0)")
+	imdsTimeout := fs.Int("imds-timeout", 0, "IMDS timeout override in seconds (env FACTS_IMDS_TIMEOUT or default used if 0)")
+	ec2Timeout := fs.Int("ec2-timeout", 0, "EC2 timeout override in seconds (env FACTS_EC2_TIMEOUT or default used if 0)")
 
 	if err := fs.Parse(args); err != nil {
 		output.Fatalf("flag parse: %s", err)
@@ -177,8 +177,8 @@ func cmdDescribeTags(ctx context.Context, args []string) {
 	instanceID := fs.String("instance-id", "", "Instance ID (auto-detected from IMDS if not provided)")
 	region := fs.String("region", "", "AWS region (auto-detected if not provided)")
 	profile := fs.String("profile", "", "AWS named profile")
-	imdsTimeout := fs.Int("imds-timeout", 0, "IMDS timeout override in seconds (env FAX_IMDS_TIMEOUT or default used if 0)")
-	ec2Timeout := fs.Int("ec2-timeout", 0, "EC2 timeout override in seconds (env FAX_EC2_TIMEOUT or default used if 0)")
+	imdsTimeout := fs.Int("imds-timeout", 0, "IMDS timeout override in seconds (env FACTS_IMDS_TIMEOUT or default used if 0)")
+	ec2Timeout := fs.Int("ec2-timeout", 0, "EC2 timeout override in seconds (env FACTS_EC2_TIMEOUT or default used if 0)")
 
 	if err := fs.Parse(args); err != nil {
 		output.Fatalf("flag parse: %s", err)
@@ -219,8 +219,8 @@ func cmdSetTag(ctx context.Context, args []string) {
 	profile := fs.String("profile", "", "AWS named profile")
 	key := fs.String("key", "", "Tag key to set (required)")
 	value := fs.String("value", "", "Tag value to set (required)")
-	imdsTimeout := fs.Int("imds-timeout", 0, "IMDS timeout override in seconds (env FAX_IMDS_TIMEOUT or default used if 0)")
-	ec2Timeout := fs.Int("ec2-timeout", 0, "EC2 timeout override in seconds (env FAX_EC2_TIMEOUT or default used if 0)")
+	imdsTimeout := fs.Int("imds-timeout", 0, "IMDS timeout override in seconds (env FACTS_IMDS_TIMEOUT or default used if 0)")
+	ec2Timeout := fs.Int("ec2-timeout", 0, "EC2 timeout override in seconds (env FACTS_EC2_TIMEOUT or default used if 0)")
 
 	if err := fs.Parse(args); err != nil {
 		output.Fatalf("flag parse: %s", err)
@@ -264,7 +264,7 @@ func cmdSetTag(ctx context.Context, args []string) {
 
 func cmdMetadataGet(ctx context.Context, args []string) {
 	fs := flag.NewFlagSet("metadata get", flag.ContinueOnError)
-	imdsTimeout := fs.Int("imds-timeout", 0, "IMDS timeout override in seconds (env FAX_IMDS_TIMEOUT or default used if 0)")
+	imdsTimeout := fs.Int("imds-timeout", 0, "IMDS timeout override in seconds (env FACTS_IMDS_TIMEOUT or default used if 0)")
 
 	if err := fs.Parse(args); err != nil {
 		output.Fatalf("flag parse: %s", err)
@@ -306,7 +306,7 @@ func cmdMetadataGet(ctx context.Context, args []string) {
 func cmdMetadataDump(ctx context.Context, args []string) {
 	fs := flag.NewFlagSet("metadata dump", flag.ContinueOnError)
 	path := fs.String("path", "/latest/meta-data/", "Subtree path to dump")
-	imdsTimeout := fs.Int("imds-timeout", 0, "IMDS timeout override in seconds (env FAX_IMDS_TIMEOUT or default used if 0)")
+	imdsTimeout := fs.Int("imds-timeout", 0, "IMDS timeout override in seconds (env FACTS_IMDS_TIMEOUT or default used if 0)")
 
 	if err := fs.Parse(args); err != nil {
 		output.Fatalf("flag parse: %s", err)
