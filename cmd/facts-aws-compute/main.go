@@ -20,7 +20,7 @@ import (
 const usage = `Usage: facts-aws-compute <command> [options]
 
 Commands:
-	ec2 describe-instances   Describe an EC2 instance ("fast" [default] or "full" mode)
+	ec2-describe-instances   Describe an EC2 instance ("fast" [default] or "full" mode)
 		--fast                 Use IMDS for all fields, EC2 API fallback for tags only (default)
 		--full                 Use EC2 API for all fields; --instance-id and --region required unless running on EC2
 		--instance-id          Instance ID (used only with --full; auto-detected from IMDS if not provided)
@@ -28,10 +28,10 @@ Commands:
 		--profile              AWS named profile (optional)
 		--imds-timeout         IMDS timeout override in seconds
 		--ec2-timeout          EC2 timeout override in seconds
-	ec2 describe-tags        Describe tags for an EC2 instance
-	ec2 set-tag              Set a tag key/value on an EC2 instance
-	metadata get <path>      Get a single IMDS metadata value
-	metadata dump            Dump IMDS metadata tree as JSON
+	ec2-describe-tags        Describe tags for an EC2 instance
+	ec2-set-tag              Set a tag key/value on an EC2 instance
+	metadata-get <path>      Get a single IMDS metadata value
+	metadata-dump            Dump IMDS metadata tree as JSON
 `
 
 func main() {
@@ -70,32 +70,16 @@ func main() {
 
 	// Route to subcommand
 	switch args[1] {
-	case "ec2":
-		if len(args) < 3 {
-			output.Fatal("ec2 requires a subcommand: describe-instances or describe-tags")
-		}
-		switch args[2] {
-		case "describe-instances":
-			cmdDescribeInstances(ctx, args[3:])
-		case "describe-tags":
-			cmdDescribeTags(ctx, args[3:])
-		case "set-tag":
-			cmdSetTag(ctx, args[3:])
-		default:
-			output.Fatalf("unknown ec2 subcommand: %s", args[2])
-		}
-	case "metadata":
-		if len(args) < 3 {
-			output.Fatal("metadata requires a subcommand: get or dump")
-		}
-		switch args[2] {
-		case "get":
-			cmdMetadataGet(ctx, args[3:])
-		case "dump":
-			cmdMetadataDump(ctx, args[3:])
-		default:
-			output.Fatalf("unknown metadata subcommand: %s", args[2])
-		}
+	case "ec2-describe-instances":
+		cmdDescribeInstances(ctx, args[2:])
+	case "ec2-describe-tags":
+		cmdDescribeTags(ctx, args[2:])
+	case "ec2-set-tag":
+		cmdSetTag(ctx, args[2:])
+	case "metadata-get":
+		cmdMetadataGet(ctx, args[2:])
+	case "metadata-dump":
+		cmdMetadataDump(ctx, args[2:])
 	case "-h", "--help", "help":
 		fmt.Fprint(os.Stderr, usage)
 		os.Exit(0)
@@ -107,7 +91,7 @@ func main() {
 // ─── ec2 describe-instances ──────────────────────────────────────────
 
 func cmdDescribeInstances(ctx context.Context, args []string) {
-	fs := flag.NewFlagSet("ec2 describe-instances", flag.ContinueOnError)
+	fs := flag.NewFlagSet("ec2-describe-instances", flag.ContinueOnError)
 	instanceID := fs.String("instance-id", "", "Instance ID (used only with --full; auto-detected from IMDS if not provided)")
 	region := fs.String("region", "", "AWS region (used only with --full; auto-detected from IMDS if not provided)")
 	profile := fs.String("profile", "", "AWS named profile")
@@ -117,6 +101,9 @@ func cmdDescribeInstances(ctx context.Context, args []string) {
 	ec2Timeout := fs.Int("ec2-timeout", 0, "EC2 timeout override in seconds (env FACTS_EC2_TIMEOUT or default used if 0)")
 
 	if err := fs.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			os.Exit(0)
+		}
 		output.Fatalf("flag parse: %s", err)
 	}
 
@@ -127,8 +114,13 @@ func cmdDescribeInstances(ctx context.Context, args []string) {
 		config.SetEC2TimeoutSeconds(*ec2Timeout)
 	}
 
-	// Default to fast mode unless --full is specified
-	useFast := *fast || !*full
+	// Default to fast mode unless --full is specified, or explicit args are used
+	useFast := false
+	if *fast {
+		useFast = true
+	} else if !*full && *instanceID == "" && *region == "" {
+		useFast = true
+	}
 
 	imds := mustIMDSClient(ctx)
 
@@ -173,7 +165,7 @@ func cmdDescribeInstances(ctx context.Context, args []string) {
 // ─── ec2 describe-tags ───────────────────────────────────────────────
 
 func cmdDescribeTags(ctx context.Context, args []string) {
-	fs := flag.NewFlagSet("ec2 describe-tags", flag.ContinueOnError)
+	fs := flag.NewFlagSet("ec2-describe-tags", flag.ContinueOnError)
 	instanceID := fs.String("instance-id", "", "Instance ID (auto-detected from IMDS if not provided)")
 	region := fs.String("region", "", "AWS region (auto-detected if not provided)")
 	profile := fs.String("profile", "", "AWS named profile")
@@ -181,6 +173,9 @@ func cmdDescribeTags(ctx context.Context, args []string) {
 	ec2Timeout := fs.Int("ec2-timeout", 0, "EC2 timeout override in seconds (env FACTS_EC2_TIMEOUT or default used if 0)")
 
 	if err := fs.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			os.Exit(0)
+		}
 		output.Fatalf("flag parse: %s", err)
 	}
 
@@ -213,7 +208,7 @@ func cmdDescribeTags(ctx context.Context, args []string) {
 // ─── ec2 set-tag ─────────────────────────────────────────────────────
 
 func cmdSetTag(ctx context.Context, args []string) {
-	fs := flag.NewFlagSet("ec2 set-tag", flag.ContinueOnError)
+	fs := flag.NewFlagSet("ec2-set-tag", flag.ContinueOnError)
 	instanceID := fs.String("instance-id", "", "Instance ID (auto-detected from IMDS if not provided)")
 	region := fs.String("region", "", "AWS region (auto-detected if not provided)")
 	profile := fs.String("profile", "", "AWS named profile")
@@ -223,6 +218,9 @@ func cmdSetTag(ctx context.Context, args []string) {
 	ec2Timeout := fs.Int("ec2-timeout", 0, "EC2 timeout override in seconds (env FACTS_EC2_TIMEOUT or default used if 0)")
 
 	if err := fs.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			os.Exit(0)
+		}
 		output.Fatalf("flag parse: %s", err)
 	}
 
@@ -263,10 +261,13 @@ func cmdSetTag(ctx context.Context, args []string) {
 // ─── metadata get ────────────────────────────────────────────────────
 
 func cmdMetadataGet(ctx context.Context, args []string) {
-	fs := flag.NewFlagSet("metadata get", flag.ContinueOnError)
+	fs := flag.NewFlagSet("metadata-get", flag.ContinueOnError)
 	imdsTimeout := fs.Int("imds-timeout", 0, "IMDS timeout override in seconds (env FACTS_IMDS_TIMEOUT or default used if 0)")
 
 	if err := fs.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			os.Exit(0)
+		}
 		output.Fatalf("flag parse: %s", err)
 	}
 
@@ -275,7 +276,7 @@ func cmdMetadataGet(ctx context.Context, args []string) {
 	}
 
 	if fs.NArg() < 1 {
-		output.Fatal("metadata get requires a path argument, e.g. /latest/meta-data/instance-id")
+		output.Fatal("metadata-get requires a path argument, e.g. /latest/meta-data/instance-id")
 	}
 
 	path := fs.Arg(0)
@@ -304,11 +305,14 @@ func cmdMetadataGet(ctx context.Context, args []string) {
 // ─── metadata dump ───────────────────────────────────────────────────
 
 func cmdMetadataDump(ctx context.Context, args []string) {
-	fs := flag.NewFlagSet("metadata dump", flag.ContinueOnError)
+	fs := flag.NewFlagSet("metadata-dump", flag.ContinueOnError)
 	path := fs.String("path", "/latest/meta-data/", "Subtree path to dump")
 	imdsTimeout := fs.Int("imds-timeout", 0, "IMDS timeout override in seconds (env FACTS_IMDS_TIMEOUT or default used if 0)")
 
 	if err := fs.Parse(args); err != nil {
+		if err == flag.ErrHelp {
+			os.Exit(0)
+		}
 		output.Fatalf("flag parse: %s", err)
 	}
 
