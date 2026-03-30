@@ -7,7 +7,7 @@ for EC2 instance metadata and tag queries. Part of the FACTS bootstrap system.
 
 ```bash
 make build
-# produces: ./facts-aws-compute (static linux/amd64 binary)
+# produces: ./dist/facts-aws-compute (static linux/amd64 binary)
 ```
 
 ## Commands
