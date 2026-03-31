@@ -38,9 +38,12 @@ func (c *Client) Get(ctx context.Context, path string) (string, error) {
 		defer cancel()
 	}
 
-	output.Debugf("IMDS GET %s", path)
+	cleanPath := strings.TrimPrefix(path, "/")
+	cleanPath = strings.TrimPrefix(cleanPath, "latest/meta-data/")
+
+	output.Debugf("IMDS GET %s (clean: %s)", path, cleanPath)
 	out, err := c.inner.GetMetadata(ctx, &imds.GetMetadataInput{
-		Path: path,
+		Path: cleanPath,
 	})
 	if err != nil {
 		if isNotFound(err) {
